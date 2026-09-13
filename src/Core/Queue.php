@@ -58,7 +58,7 @@ class Queue
         $this->push($class, $payload);
 
         $basePath = escapeshellarg(app()->getBasePath());
-        $command = 'cd ' . $basePath . ' && ./vendor/bin/nix queue:consume --once';
+        $command = 'cd ' . $basePath . ' && ./vendor/bin/naf queue:consume --once';
 
         // Fire off a background PHP process to handle the next job
         exec($command . ' > /dev/null 2>&1 &');
