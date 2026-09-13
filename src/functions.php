@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace NixPHP\Queue;
+namespace Naf\Queue;
 
-use NixPHP\Queue\Core\Queue;
-use NixPHP\Queue\Decorators\Drivers\ChannelDriver;
-use NixPHP\Queue\Decorators\Drivers\ChannelQueueDriverInterface;
-use function NixPHP\app;
-use function NixPHP\log;
+use Naf\Queue\Core\Queue;
+use Naf\Queue\Decorators\Drivers\ChannelDriver;
+use Naf\Queue\Decorators\Drivers\ChannelQueueDriverInterface;
+use function Naf\app;
+use function Naf\log;
 
 function queue(?string $channel = null): Queue
 {

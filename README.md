@@ -1,22 +1,22 @@
 <div align="center" style="text-align: center;">
 
-![Logo](https://nixphp.github.io/docs/assets/nixphp-logo-small-square.png)
+![NAF](assets/naf-logo-small-square.png)
 
-[![NixPHP Queue Plugin](https://github.com/nixphp/queue/actions/workflows/php.yml/badge.svg)](https://github.com/nixphp/queue/actions/workflows/php.yml)
+[![NAF Queue Plugin](https://github.com/nafphp/queue/actions/workflows/php.yml/badge.svg)](https://github.com/nafphp/queue/actions/workflows/php.yml)
 
 </div>
 
-[← Back to NixPHP](https://github.com/nixphp/framework)
+[← Back to NAF](https://github.com/nafphp/framework)
 
 ---
 
-# nixphp/queue
+# naf/queue
 
-> **Minimalistic queueing for NixPHP – file-based, simple, and extendable.**
+> **Minimalistic queueing for NAF – file-based, simple, and extendable.**
 
 This plugin provides a lightweight job queue system with CLI worker support and no external dependencies by default.
 
-> 🧩 Part of the official NixPHP plugin collection.  
+> 🧩 Part of the official NAF plugin collection.  
 > Use it when you want to delay tasks, run background jobs, or decouple logic – without setting up Redis or RabbitMQ.
 
 ---
@@ -37,7 +37,7 @@ This plugin provides a lightweight job queue system with CLI worker support and 
 ## 📥 Installation
 
 ```bash
-composer require nixphp/queue
+composer require naf/queue
 ````
 
 That’s it. The plugin will be autoloaded automatically.
@@ -51,7 +51,7 @@ That’s it. The plugin will be autoloaded automatically.
 Create a job class that implements the `QueueJobInterface`:
 
 ```php
-use NixPHP\Queue\QueueJobInterface;
+use Naf\Queue\QueueJobInterface;
 
 class SendWelcomeEmail implements QueueJobInterface
 {
@@ -180,8 +180,8 @@ Included drivers:
 To register a custom driver, configure it in your `bootstrap.php`:
 
 ```php
-use NixPHP\Queue\Core\Queue;
-use NixPHP\Queue\Drivers\FileDriver;
+use Naf\Queue\Core\Queue;
+use Naf\Queue\Drivers\FileDriver;
 
 app()->container()->set(Queue::class, function () {
     return new Queue(
@@ -202,21 +202,21 @@ app()->container()->set(Queue::class, function () {
 To run the worker persistently in production, use [Supervisor](http://supervisord.org):
 
 ```ini
-[program:nixphp-worker]
+[program:naf-worker]
 command=php bin/nix queue:consume --channels=default,emails
 directory=/path/to/your/app
 autostart=true
 autorestart=true
-stderr_logfile=/var/log/nixphp/worker.err.log
-stdout_logfile=/var/log/nixphp/worker.out.log
+stderr_logfile=/var/log/naf/worker.err.log
+stdout_logfile=/var/log/naf/worker.out.log
 ```
 
 ---
 
 ## ✅ Requirements
 
-* `nixphp/framework` ^0.1.0
-* `nixphp/cli` ^0.1.0 (required for worker commands)
+* `naf/framework` ^0.1.0
+* `naf/cli` ^0.1.0 (required for worker commands)
 
 ---
 

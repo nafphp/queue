@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace NixPHP\Queue\Decorators\Drivers;
+namespace Naf\Queue\Decorators\Drivers;
 
 use Throwable;
 

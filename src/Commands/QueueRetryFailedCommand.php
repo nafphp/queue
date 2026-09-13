@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace NixPHP\Queue\Commands;
+namespace Naf\Queue\Commands;
 
-use NixPHP\CLI\Core\AbstractCommand;
-use NixPHP\CLI\Core\Input;
-use NixPHP\CLI\Core\Output;
-use NixPHP\Queue\Drivers\QueueDeadletterDriverInterface;
-use function NixPHP\Queue\queue;
+use Naf\CLI\Core\AbstractCommand;
+use Naf\CLI\Core\Input;
+use Naf\CLI\Core\Output;
+use Naf\Queue\Drivers\QueueDeadletterDriverInterface;
+use function Naf\Queue\queue;
 
 class QueueRetryFailedCommand extends AbstractCommand
 {
@@ -16,7 +16,7 @@ class QueueRetryFailedCommand extends AbstractCommand
 
     protected function configure(): void
     {
-        $this->setTitle('NixPHP Queue Deadletter Retry')
+        $this->setTitle('NAF Queue Deadletter Retry')
             ->setDescription('Retry failed jobs')
             ->addOption('keep');
     }

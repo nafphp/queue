@@ -1,9 +1,9 @@
 {
-  "name": "nixphp/queue",
-  "description": "NixPHP Queue Plugin for asynchronous jobs.",
+  "name": "naf/queue",
+  "description": "NAF Queue Plugin for asynchronous jobs.",
   "minimum-stability": "stable",
   "license": "MIT",
-  "type": "nixphp-plugin",
+  "type": "naf-plugin",
   "authors": [
     {
       "name": "Flo Knapp",
@@ -12,7 +12,7 @@
   ],
   "autoload": {
     "psr-4": {
-      "NixPHP\\Queue\\": "src/"
+      "Naf\\Queue\\": "src/"
     }
   },
   "autoload-dev": {
@@ -23,8 +23,8 @@
   },
   "require": {
     "php": ">=8.3",
-    "nixphp/framework": "^0.1.0",
-    "nixphp/cli": "^0.1.0"
+    "naf/framework": "^0.2",
+    "naf/cli": "^0.2"
   },
   "require-dev": {
     "phpunit/phpunit": "^12.1",

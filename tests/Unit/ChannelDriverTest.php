@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
-use NixPHP\Queue\Decorators\Drivers\ChannelDriver;
+use Naf\Queue\Decorators\Drivers\ChannelDriver;
 use Tests\Fixtures\FakeChannelDriver;
 use Tests\Fixtures\FakeGlobalDeadletterDriver;
 use Tests\Fixtures\FakeNoDeadletterDriver;
-use Tests\NixPHPTestCase;
+use Tests\NafTestCase;
 
-final class ChannelDriverTest extends NixPHPTestCase
+final class ChannelDriverTest extends NafTestCase
 {
     public function testEnqueueRoutesToChannel(): void
     {

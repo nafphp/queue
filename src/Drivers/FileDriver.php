@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace NixPHP\Queue\Drivers;
+namespace Naf\Queue\Drivers;
 
 use JsonException;
-use NixPHP\Queue\Decorators\Drivers\ChannelDriver;
-use NixPHP\Queue\Decorators\Drivers\ChannelQueueDriverInterface;
+use Naf\Queue\Decorators\Drivers\ChannelDriver;
+use Naf\Queue\Decorators\Drivers\ChannelQueueDriverInterface;
 use Random\RandomException;
 use Throwable;
-use function NixPHP\app;
-use function NixPHP\config;
-use function NixPHP\guard;
+use function Naf\app;
+use function Naf\config;
+use function Naf\guard;
 
 class FileDriver implements QueueDriverInterface, QueueDeadletterDriverInterface, ChannelQueueDriverInterface
 {

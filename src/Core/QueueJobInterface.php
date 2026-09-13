@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace NixPHP\Queue\Core;
+namespace Naf\Queue\Core;
 
-use NixPHP\CLI\Core\Output;
+use Naf\CLI\Core\Output;
 
 interface QueueJobInterface
 {

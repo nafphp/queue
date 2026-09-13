@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Fixtures;
 
-use NixPHP\Queue\Decorators\Drivers\ChannelDeadletterDriverInterface;
-use NixPHP\Queue\Decorators\Drivers\ChannelQueueDriverInterface;
+use Naf\Queue\Decorators\Drivers\ChannelDeadletterDriverInterface;
+use Naf\Queue\Decorators\Drivers\ChannelQueueDriverInterface;
 
 final class FakeChannelDriver implements ChannelQueueDriverInterface, ChannelDeadletterDriverInterface
 {

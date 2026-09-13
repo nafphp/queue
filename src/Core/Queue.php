@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace NixPHP\Queue\Core;
+namespace Naf\Queue\Core;
 
-use NixPHP\Queue\Drivers\QueueDriverInterface;
-use function NixPHP\app;
+use Naf\Queue\Drivers\QueueDriverInterface;
+use function Naf\app;
 
 class Queue
 {

@@ -5,17 +5,17 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use InvalidArgumentException;
-use NixPHP\Queue\Drivers\FileDriver;
-use Tests\NixPHPTestCase;
+use Naf\Queue\Drivers\FileDriver;
+use Tests\NafTestCase;
 
-final class FileDriverTest extends NixPHPTestCase
+final class FileDriverTest extends NafTestCase
 {
     private string $basePath;
     private FileDriver $driver;
 
     protected function setUp(): void
     {
-        $this->basePath = sys_get_temp_dir() . '/nixphp-queue-test-' . uniqid('', true);
+        $this->basePath = sys_get_temp_dir() . '/naf-queue-test-' . uniqid('', true);
         @mkdir($this->basePath . '/storage/queue', 0777, true);
 
         $this->driver = new FileDriver(

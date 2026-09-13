@@ -2,11 +2,11 @@
 
 namespace Tests\Unit;
 
-use NixPHP\Queue\Core\Queue;
-use NixPHP\Queue\Drivers\QueueDriverInterface;
-use Tests\NixPHPTestCase;
+use Naf\Queue\Core\Queue;
+use Naf\Queue\Drivers\QueueDriverInterface;
+use Tests\NafTestCase;
 
-class QueueTest extends NixPHPTestCase
+class QueueTest extends NafTestCase
 {
     private Queue $queue;
     private QueueDriverInterface $driver;

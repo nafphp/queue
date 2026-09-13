@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace NixPHP\Queue\Commands;
+namespace Naf\Queue\Commands;
 
-use NixPHP\CLI\Core\AbstractCommand;
-use NixPHP\CLI\Core\Input;
-use NixPHP\CLI\Core\Output;
-use NixPHP\Decorators\AutoResolvingContainer;
-use NixPHP\Queue\Core\QueueJobInterface;
-use NixPHP\Queue\Decorators\Drivers\ChannelDeadletterDriverInterface;
-use NixPHP\Queue\Drivers\QueueDeadletterDriverInterface;
+use Naf\CLI\Core\AbstractCommand;
+use Naf\CLI\Core\Input;
+use Naf\CLI\Core\Output;
+use Naf\Decorators\AutoResolvingContainer;
+use Naf\Queue\Core\QueueJobInterface;
+use Naf\Queue\Decorators\Drivers\ChannelDeadletterDriverInterface;
+use Naf\Queue\Drivers\QueueDeadletterDriverInterface;
 use Throwable;
-use function NixPHP\app;
-use function NixPHP\config;
-use function NixPHP\log;
-use function NixPHP\Queue\queue;
+use function Naf\app;
+use function Naf\config;
+use function Naf\log;
+use function Naf\Queue\queue;
 
 class QueueConsumeCommand extends AbstractCommand
 {
@@ -26,7 +26,7 @@ class QueueConsumeCommand extends AbstractCommand
     protected function configure(): void
     {
         $this
-            ->setTitle('NixPHP Queue Worker')
+            ->setTitle('NAF Queue Worker')
             ->setDescription('Run the queue worker')
             ->addOption('once')
             ->addOption('verbose', 'v')

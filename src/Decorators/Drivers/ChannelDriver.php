@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace NixPHP\Queue\Decorators\Drivers;
+namespace Naf\Queue\Decorators\Drivers;
 
-use NixPHP\Queue\Drivers\QueueDeadletterDriverInterface;
-use NixPHP\Queue\Drivers\QueueDriverInterface;
+use Naf\Queue\Drivers\QueueDeadletterDriverInterface;
+use Naf\Queue\Drivers\QueueDriverInterface;
 use Throwable;
 
 class ChannelDriver implements QueueDriverInterface, QueueDeadletterDriverInterface

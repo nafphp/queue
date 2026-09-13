@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-use NixPHP\Queue\Commands\QueueRetryFailedCommand;
-use NixPHP\Queue\Commands\QueueConsumeCommand;
-use NixPHP\Queue\Core\Queue;
-use NixPHP\Queue\Drivers\FileDriver;
-use function NixPHP\app;
-use function NixPHP\CLI\command;
-use function NixPHP\guard;
+use Naf\Queue\Commands\QueueRetryFailedCommand;
+use Naf\Queue\Commands\QueueConsumeCommand;
+use Naf\Queue\Core\Queue;
+use Naf\Queue\Drivers\FileDriver;
+use function Naf\app;
+use function Naf\CLI\command;
+use function Naf\guard;
 
 command()->add(QueueConsumeCommand::class);
 command()->add(QueueRetryFailedCommand::class);
