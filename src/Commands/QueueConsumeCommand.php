@@ -10,9 +10,11 @@ use Naf\CLI\Core\Output;
 use Naf\Decorators\AutoResolvingContainer;
 use Naf\Queue\Core\QueueJobInterface;
 use Naf\Queue\Decorators\Drivers\ChannelDeadletterDriverInterface;
-use Naf\Queue\Drivers\QueueDeadletterDriverInterface;
-use Throwable;
 use Naf\Queue\Drivers\LeaseQueueDriverInterface;
+use Naf\Queue\Drivers\QueueDeadletterDriverInterface;
+use RuntimeException;
+use Throwable;
+
 use function Naf\app;
 use function Naf\config;
 use function Naf\log;
@@ -26,8 +28,7 @@ class QueueConsumeCommand extends AbstractCommand
 
     protected function configure(): void
     {
-        $this
-            ->setTitle('NAF Queue Worker')
+        $this->setTitle('NAF Queue Worker')
             ->setDescription('Run the queue worker')
             ->addOption('once')
             ->addOption('verbose', 'v')
@@ -58,21 +59,31 @@ class QueueConsumeCommand extends AbstractCommand
 
         do {
             $heartbeat = config('queue:heartbeat_file');
-            if (is_string($heartbeat) && $heartbeat !== '' && file_put_contents($heartbeat, (string) time(), LOCK_EX) === false) throw new \RuntimeException('Cannot write queue heartbeat.');
+            if (
+                is_string($heartbeat)
+                && $heartbeat !== ''
+                && file_put_contents($heartbeat, (string) time(), LOCK_EX) === false
+            ) {
+                throw new RuntimeException('Cannot write queue heartbeat.');
+            }
             if (ob_get_level() > 0) {
                 ob_flush();
             }
 
             if ($maxJobs && $jobCount >= $maxJobs) {
                 $msg = 'Max jobs reached... Quitting.';
-                if ($isVerbose) $output->writeLine($msg);
+                if ($isVerbose) {
+                    $output->writeLine($msg);
+                }
                 log()->info($msg);
                 break;
             }
 
-            if ($maxRuntime && time() >= ($timeStarted + $maxRuntime)) {
+            if ($maxRuntime && time() >= $timeStarted + $maxRuntime) {
                 $msg = 'Max runtime reached... Quitting.';
-                if ($isVerbose) $output->writeLine($msg);
+                if ($isVerbose) {
+                    $output->writeLine($msg);
+                }
                 log()->info($msg);
                 break;
             }
@@ -80,21 +91,27 @@ class QueueConsumeCommand extends AbstractCommand
             [$jobData, $channelUsed] = $this->popFromChannels($channels);
 
             if (!$jobData) {
-                if ($once) return static::SUCCESS;
-                if ($isVerbose) echo " Waiting for new job...\r";
+                if ($once) {
+                    return static::SUCCESS;
+                }
+                if ($isVerbose) {
+                    echo " Waiting for new job...\r";
+                }
                 sleep(static::SLEEP_DELAY);
                 continue;
             }
 
             $class    = $jobData['class'];
             $payload  = $jobData['payload'];
-            $q = queue($channelUsed);
-            $leased = $q->driver() instanceof LeaseQueueDriverInterface;
-            $attempts = $leased ? (int)$jobData['attempts'] - 1 : ($payload['_attempts'] ?? 0);
+            $q        = queue($channelUsed);
+            $leased   = $q->driver() instanceof LeaseQueueDriverInterface;
+            $attempts = $leased ? (int) $jobData['attempts'] - 1 : $payload['_attempts'] ?? 0;
 
             try {
                 $attempts++;
-                if (!class_exists($class)) throw new \RuntimeException("Job class $class not found.");
+                if (!class_exists($class)) {
+                    throw new RuntimeException("Job class $class not found.");
+                }
 
                 if ($container instanceof AutoResolvingContainer) {
                     $job = app()->container()->make($class, $payload);
@@ -103,28 +120,48 @@ class QueueConsumeCommand extends AbstractCommand
                 }
 
                 if (!($job instanceof QueueJobInterface)) {
-                    throw new \RuntimeException("$class does not implement QueueJobInterface.");
+                    throw new RuntimeException("$class does not implement QueueJobInterface.");
                 }
 
                 $date = date('Y-m-d H:i:s');
 
-                if ($isVerbose) $output->writeLine("🕛 Job $class started at $date (attempt $attempts)...");
+                if ($isVerbose) {
+                    $output->writeLine("🕛 Job $class started at $date (attempt $attempts)...");
+                }
 
                 $start = microtime(true);
                 $job->execute($output);
-                if ($leased) $q->driver()->acknowledge($jobData);
-                if ($isVerbose) $output->writeEmptyLine();
-                if ($isVerbose) $output->writeLine("✔ Job $class done in " . number_format(microtime(true) - $start, 5) . "s.");
+                if ($leased) {
+                    $q->driver()->acknowledge($jobData);
+                }
+                if ($isVerbose) {
+                    $output->writeEmptyLine();
+                }
+                if ($isVerbose) {
+                    $output->writeLine(
+                        "✔ Job $class done in " . number_format(microtime(true) - $start, 5) . 's.',
+                    );
+                }
 
                 $jobCount++;
-
             } catch (Throwable $e) {
-                if ($isVerbose) $output->writeLine("⚠ Job $class failed: {$e->getMessage()} (attempt $attempts)");
+                if ($isVerbose) {
+                    $output->writeLine(
+                        "⚠ Job $class failed: {$e->getMessage()} (attempt $attempts)",
+                    );
+                }
 
                 if ($leased) {
-                    $q->driver()->release($jobData, $e, (int)config('queue:max_attempts', 3), (int)config('queue:retry_delay', 5));
+                    $q->driver()->release(
+                        $jobData,
+                        $e,
+                        (int) config('queue:max_attempts', 3),
+                        (int) config('queue:retry_delay', 5),
+                    );
                     $jobCount++;
-                    if ($once) return static::ERROR;
+                    if ($once) {
+                        return static::ERROR;
+                    }
                     continue;
                 }
 
@@ -133,26 +170,40 @@ class QueueConsumeCommand extends AbstractCommand
 
                     if ($driver instanceof ChannelDeadletterDriverInterface) {
                         $driver->deadletterTo($channelUsed, $class, $payload, $e);
-                    } else if ($driver instanceof QueueDeadletterDriverInterface) {
+                    } elseif ($driver instanceof QueueDeadletterDriverInterface) {
                         $driver->deadletter($class, $payload, $e);
                     }
 
-                    if ($isVerbose) $output->writeLine("❌ Giving up on $class after $attempts attempts.");
-                    log()->error('Error still persisted after ' . $attempts . ' attempts: ' . $e->getMessage());
+                    if ($isVerbose) {
+                        $output->writeLine("❌ Giving up on $class after $attempts attempts.");
+                    }
+                    log()->error(
+                        'Error still persisted after '
+                            . $attempts
+                            . ' attempts: '
+                            . $e->getMessage(),
+                    );
                     $jobCount++;
                 } else {
                     $payload['_attempts'] = $attempts;
                     sleep(config('queue:retry_delay', 5));
                     $q->push($class, $payload);
-                    if ($isVerbose) $output->writeLine("🔁 Retrying $class...");
+                    if ($isVerbose) {
+                        $output->writeLine("🔁 Retrying $class...");
+                    }
                 }
             }
 
-            if ($isVerbose) $output->writeLine('---');
-            if ($isVerbose) $output->writeEmptyLine();
+            if ($isVerbose) {
+                $output->writeLine('---');
+            }
+            if ($isVerbose) {
+                $output->writeEmptyLine();
+            }
 
-            if ($once) return static::SUCCESS;
-
+            if ($once) {
+                return static::SUCCESS;
+            }
         } while (true);
 
         return static::SUCCESS;
@@ -174,7 +225,9 @@ class QueueConsumeCommand extends AbstractCommand
         if (is_string($multi) && trim($multi) !== '') {
             foreach (explode(',', $multi) as $ch) {
                 $ch = trim($ch);
-                if ($ch !== '') $channels[] = $ch;
+                if ($ch !== '') {
+                    $channels[] = $ch;
+                }
             }
         }
 
