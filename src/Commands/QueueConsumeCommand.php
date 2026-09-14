@@ -12,6 +12,7 @@ use Naf\Queue\Core\QueueJobInterface;
 use Naf\Queue\Decorators\Drivers\ChannelDeadletterDriverInterface;
 use Naf\Queue\Drivers\QueueDeadletterDriverInterface;
 use Throwable;
+use Naf\Queue\Drivers\LeaseQueueDriverInterface;
 use function Naf\app;
 use function Naf\config;
 use function Naf\log;
@@ -56,6 +57,8 @@ class QueueConsumeCommand extends AbstractCommand
         $container = app()->container();
 
         do {
+            $heartbeat = config('queue:heartbeat_file');
+            if (is_string($heartbeat) && $heartbeat !== '' && file_put_contents($heartbeat, (string) time(), LOCK_EX) === false) throw new \RuntimeException('Cannot write queue heartbeat.');
             if (ob_get_level() > 0) {
                 ob_flush();
             }
@@ -85,18 +88,13 @@ class QueueConsumeCommand extends AbstractCommand
 
             $class    = $jobData['class'];
             $payload  = $jobData['payload'];
-            $attempts = $payload['_attempts'] ?? 0;
-
-            if (!class_exists($class)) {
-                if ($isVerbose) $output->writeLine("⚠ Job class $class not found.");
-                log()->warning("Job class $class not found.");
-                continue;
-            }
-
             $q = queue($channelUsed);
+            $leased = $q->driver() instanceof LeaseQueueDriverInterface;
+            $attempts = $leased ? (int)$jobData['attempts'] - 1 : ($payload['_attempts'] ?? 0);
 
             try {
                 $attempts++;
+                if (!class_exists($class)) throw new \RuntimeException("Job class $class not found.");
 
                 if ($container instanceof AutoResolvingContainer) {
                     $job = app()->container()->make($class, $payload);
@@ -114,6 +112,7 @@ class QueueConsumeCommand extends AbstractCommand
 
                 $start = microtime(true);
                 $job->execute($output);
+                if ($leased) $q->driver()->acknowledge($jobData);
                 if ($isVerbose) $output->writeEmptyLine();
                 if ($isVerbose) $output->writeLine("✔ Job $class done in " . number_format(microtime(true) - $start, 5) . "s.");
 
@@ -121,6 +120,13 @@ class QueueConsumeCommand extends AbstractCommand
 
             } catch (Throwable $e) {
                 if ($isVerbose) $output->writeLine("⚠ Job $class failed: {$e->getMessage()} (attempt $attempts)");
+
+                if ($leased) {
+                    $q->driver()->release($jobData, $e, (int)config('queue:max_attempts', 3), (int)config('queue:retry_delay', 5));
+                    $jobCount++;
+                    if ($once) return static::ERROR;
+                    continue;
+                }
 
                 if ($attempts >= config('queue:max_attempts', 3)) {
                     $driver = $q->driver();

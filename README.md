@@ -36,3 +36,10 @@ composer require naf/queue
 ## License
 
 MIT. Part of [NAF](https://github.com/nafphp/framework).
+
+
+## Unreleased Nafinity integration candidate
+
+Target branch: `v0.2.3-rc`. This behavior is not a published release yet.
+
+PDODriver adds durable reserve/acknowledge/release/renew semantics through LeaseQueueDriverInterface. Explicitly call install(), bind the configured PDO driver, and use the default channel. Enqueue participates in a caller transaction. PostgreSQL/MariaDB use row locks with SKIP LOCKED; SQLite has a serialized contract implementation. Claims must be made outside an existing transaction. A failed/crashed claim becomes available after its lease expires; fenced tokens reject stale acknowledgements. Retries and deadletters retain attempts. The queue:consume command handles this contract and acknowledges only after success. Custom dequeue consumers must acknowledge the returned reservation. Ensure jobs finish inside the lease or explicitly renew; external delivery remains at least once. Optional queue:heartbeat_file records worker polling activity.
