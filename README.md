@@ -42,4 +42,8 @@ MIT. Part of [NAF](https://github.com/nafphp/framework).
 
 Target branch: `v0.2.3-rc`. This behavior is not a published release yet.
 
+`queue:consume --once` returns a nonzero exit code when the selected job fails, including
+missing job classes, with both legacy drivers and the PDO lease driver. Retry/deadletter
+handling still retains the failed work.
+
 PDODriver adds durable reserve/acknowledge/release/renew semantics through LeaseQueueDriverInterface. Explicitly call install(), bind the configured PDO driver, and use the default channel. Enqueue participates in a caller transaction. PostgreSQL/MariaDB use row locks with SKIP LOCKED; SQLite has a serialized contract implementation. Claims must be made outside an existing transaction. A failed/crashed claim becomes available after its lease expires; fenced tokens reject stale acknowledgements. Retries and deadletters retain attempts. The queue:consume command handles this contract and acknowledges only after success. Custom dequeue consumers must acknowledge the returned reservation. Ensure jobs finish inside the lease or explicitly renew; external delivery remains at least once. Optional queue:heartbeat_file records worker polling activity.

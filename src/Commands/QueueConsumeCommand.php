@@ -192,6 +192,9 @@ class QueueConsumeCommand extends AbstractCommand
                         $output->writeLine("🔁 Retrying $class...");
                     }
                 }
+                if ($once) {
+                    return static::ERROR;
+                }
             }
 
             if ($isVerbose) {
