@@ -8,7 +8,6 @@ use Throwable;
 
 interface QueueDeadletterDriverInterface
 {
-
     /**
      * @param string     $class
      * @param array      $payload
@@ -24,5 +23,4 @@ interface QueueDeadletterDriverInterface
      * @return int
      */
     public function retryFailed(bool $keep = false): int;
-
 }

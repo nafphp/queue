@@ -9,13 +9,14 @@ use Naf\Queue\Decorators\Drivers\ChannelDriver;
 use Naf\Queue\Decorators\Drivers\ChannelQueueDriverInterface;
 use Random\RandomException;
 use Throwable;
+
 use function Naf\app;
 use function Naf\config;
 use function Naf\guard;
 
 class FileDriver implements QueueDriverInterface, QueueDeadletterDriverInterface, ChannelQueueDriverInterface
 {
-    public const string DEFAULT_QUEUE_PATH = '/storage/queue';
+    public const string DEFAULT_QUEUE_PATH      = '/storage/queue';
     public const string DEFAULT_DEADLETTER_PATH = '/storage/queue/deadletter';
 
     /**
@@ -23,9 +24,10 @@ class FileDriver implements QueueDriverInterface, QueueDeadletterDriverInterface
      * @param string|null $deadLetterPath
      */
     public function __construct(
-        private readonly ?string $queuePath      = null,
-        private readonly ?string $deadLetterPath = null
-    ) {}
+        private readonly ?string $queuePath = null,
+        private readonly ?string $deadLetterPath = null,
+    ) {
+    }
 
     /**
      * @param string $class
@@ -51,9 +53,11 @@ class FileDriver implements QueueDriverInterface, QueueDeadletterDriverInterface
     public function enqueueTo(string $channel, string $class, array $payload): void
     {
         $path = $this->channelPath($channel);
-        if (!is_dir($path)) mkdir($path, 0755, true);
+        if (!is_dir($path)) {
+            mkdir($path, 0755, true);
+        }
 
-        $id = guard()->safePath($payload['_job_id'] ?? bin2hex(random_bytes(8)));
+        $id                 = guard()->safePath($payload['_job_id'] ?? bin2hex(random_bytes(8)));
         $payload['_job_id'] = $id;
 
         $tmp   = sprintf('%s/%s.job.tmp', $path, $id);
@@ -61,7 +65,7 @@ class FileDriver implements QueueDriverInterface, QueueDeadletterDriverInterface
 
         file_put_contents($tmp, json_encode([
             'class'   => $class,
-            'payload' => $payload
+            'payload' => $payload,
         ], JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
 
         rename($tmp, $final); // Prevent processing of corrupted files
@@ -84,32 +88,38 @@ class FileDriver implements QueueDriverInterface, QueueDeadletterDriverInterface
     {
         $path  = $this->channelPath($channel);
         $files = glob($path . '/*.job') ?: [];
-        if ($files === []) return null;
+        if ($files === []) {
+            return null;
+        }
 
         sort($files);
 
         foreach ($files as $file) {
             $claimed = $file . '.lock';
 
-            if (!@rename($file, $claimed)) continue; // Claim job
+            if (!@rename($file, $claimed)) {
+                continue;
+            } // Claim job
 
             $json = @file_get_contents($claimed);
             $data = $json ? json_decode($json, true) : null;
 
             if (is_array($data) && isset($data['class'])) {
                 @unlink($claimed);
+
                 return $data;
             }
 
             // Probably corrupted, move to /corrupted for later investigation
             $corrupted = $path . '/corrupted';
-            if (!is_dir($corrupted)) mkdir($corrupted, 0755, true);
+            if (!is_dir($corrupted)) {
+                mkdir($corrupted, 0755, true);
+            }
             @rename($claimed, $corrupted . '/' . basename($file));
         }
 
         return null;
     }
-
 
     /**
      * @param string     $class
@@ -119,7 +129,7 @@ class FileDriver implements QueueDriverInterface, QueueDeadletterDriverInterface
      * @return void
      * @throws RandomException
      */
-    public function deadletter(string $class, array $payload, \Throwable $exception): void
+    public function deadletter(string $class, array $payload, Throwable $exception): void
     {
         // Backwards compatible: default channel
         $this->deadletterTo(ChannelDriver::DEFAULT_CHANNEL, $class, $payload, $exception);
@@ -134,7 +144,7 @@ class FileDriver implements QueueDriverInterface, QueueDeadletterDriverInterface
      * @return void
      * @throws RandomException
      */
-    public function deadletterTo(string $channel, string $class, array $payload, \Throwable $exception): void
+    public function deadletterTo(string $channel, string $class, array $payload, Throwable $exception): void
     {
         $path = $this->deadletterChannelPath($channel);
 
@@ -142,7 +152,7 @@ class FileDriver implements QueueDriverInterface, QueueDeadletterDriverInterface
             mkdir($path, 0755, true);
         }
 
-        $id = guard()->safePath($payload['_job_id'] ?? ('rand_' . bin2hex(random_bytes(8))));
+        $id                 = guard()->safePath($payload['_job_id'] ?? ('rand_' . bin2hex(random_bytes(8))));
         $payload['_job_id'] = $id;
 
         $file = $path . '/' . $id . '.job';
@@ -157,7 +167,6 @@ class FileDriver implements QueueDriverInterface, QueueDeadletterDriverInterface
             'failed_at' => date('c'),
         ], JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
     }
-
 
     /**
      * @param bool $keep
@@ -179,7 +188,9 @@ class FileDriver implements QueueDriverInterface, QueueDeadletterDriverInterface
     {
         $path = $this->deadletterChannelPath($channel);
 
-        if (!is_dir($path)) return 0;
+        if (!is_dir($path)) {
+            return 0;
+        }
 
         $files = glob($path . '/*.job') ?: [];
         $count = 0;
@@ -234,5 +245,4 @@ class FileDriver implements QueueDriverInterface, QueueDeadletterDriverInterface
 
         return rtrim($path, '/') . '/' . $channel;
     }
-
 }

@@ -10,12 +10,13 @@ use Throwable;
 
 class ChannelDriver implements QueueDriverInterface, QueueDeadletterDriverInterface
 {
-    const string DEFAULT_CHANNEL = 'default';
+    public const string DEFAULT_CHANNEL = 'default';
 
     public function __construct(
         private readonly ChannelQueueDriverInterface $driver,
-        private readonly string                      $channel
-    ) {}
+        private readonly string                      $channel,
+    ) {
+    }
 
     public function enqueue(string $class, array $payload): void
     {
@@ -32,6 +33,7 @@ class ChannelDriver implements QueueDriverInterface, QueueDeadletterDriverInterf
         // channel-aware deadletter
         if ($this->driver instanceof ChannelDeadletterDriverInterface) {
             $this->driver->deadletterTo($this->channel, $class, $payload, $exception);
+
             return;
         }
 
@@ -53,5 +55,4 @@ class ChannelDriver implements QueueDriverInterface, QueueDeadletterDriverInterf
 
         return 0;
     }
-
 }

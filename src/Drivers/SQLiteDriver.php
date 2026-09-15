@@ -44,7 +44,7 @@ class SQLiteDriver implements QueueDriverInterface
 
             return [
                 'class'   => $job['class'],
-                'payload' => json_decode($job['payload'], true)
+                'payload' => json_decode($job['payload'], true),
             ];
         }
 
