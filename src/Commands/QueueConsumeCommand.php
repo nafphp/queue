@@ -66,25 +66,26 @@ class QueueConsumeCommand extends AbstractCommand
             ) {
                 throw new RuntimeException('Cannot write queue heartbeat.');
             }
+
             if (ob_get_level() > 0) {
                 ob_flush();
             }
 
             if ($maxJobs && $jobCount >= $maxJobs) {
-                $msg = 'Max jobs reached... Quitting.';
+                $message = 'Max jobs reached... Quitting.';
                 if ($isVerbose) {
-                    $output->writeLine($msg);
+                    $output->writeLine($message);
                 }
-                log()->info($msg);
+                log()->info($message);
                 break;
             }
 
             if ($maxRuntime && time() >= $timeStarted + $maxRuntime) {
-                $msg = 'Max runtime reached... Quitting.';
+                $message = 'Max runtime reached... Quitting.';
                 if ($isVerbose) {
-                    $output->writeLine($msg);
+                    $output->writeLine($message);
                 }
-                log()->info($msg);
+                log()->info($message);
                 break;
             }
 
@@ -103,8 +104,8 @@ class QueueConsumeCommand extends AbstractCommand
 
             $class    = $jobData['class'];
             $payload  = $jobData['payload'];
-            $q        = queue($channelUsed);
-            $leased   = $q->driver() instanceof LeaseQueueDriverInterface;
+            $queue    = queue($channelUsed);
+            $leased   = $queue->driver() instanceof LeaseQueueDriverInterface;
             $attempts = $leased ? (int) $jobData['attempts'] - 1 : $payload['_attempts'] ?? 0;
 
             try {
@@ -131,30 +132,30 @@ class QueueConsumeCommand extends AbstractCommand
 
                 $start = microtime(true);
                 $job->execute($output);
+
                 if ($leased) {
-                    $q->driver()->acknowledge($jobData);
+                    $queue->driver()->acknowledge($jobData);
                 }
+
                 if ($isVerbose) {
                     $output->writeEmptyLine();
-                }
-                if ($isVerbose) {
                     $output->writeLine(
                         "✔ Job $class done in " . number_format(microtime(true) - $start, 5) . 's.',
                     );
                 }
 
                 $jobCount++;
-            } catch (Throwable $e) {
+            } catch (Throwable $exception) {
                 if ($isVerbose) {
                     $output->writeLine(
-                        "⚠ Job $class failed: {$e->getMessage()} (attempt $attempts)",
+                        "⚠ Job $class failed: {$exception->getMessage()} (attempt $attempts)",
                     );
                 }
 
                 if ($leased) {
-                    $q->driver()->release(
+                    $queue->driver()->release(
                         $jobData,
-                        $e,
+                        $exception,
                         (int) config('queue:max_attempts', 3),
                         (int) config('queue:retry_delay', 5),
                     );
@@ -166,12 +167,12 @@ class QueueConsumeCommand extends AbstractCommand
                 }
 
                 if ($attempts >= config('queue:max_attempts', 3)) {
-                    $driver = $q->driver();
+                    $driver = $queue->driver();
 
                     if ($driver instanceof ChannelDeadletterDriverInterface) {
-                        $driver->deadletterTo($channelUsed, $class, $payload, $e);
+                        $driver->deadletterTo($channelUsed, $class, $payload, $exception);
                     } elseif ($driver instanceof QueueDeadletterDriverInterface) {
-                        $driver->deadletter($class, $payload, $e);
+                        $driver->deadletter($class, $payload, $exception);
                     }
 
                     if ($isVerbose) {
@@ -181,13 +182,13 @@ class QueueConsumeCommand extends AbstractCommand
                         'Error still persisted after '
                             . $attempts
                             . ' attempts: '
-                            . $e->getMessage(),
+                            . $exception->getMessage(),
                     );
                     $jobCount++;
                 } else {
                     $payload['_attempts'] = $attempts;
                     sleep(config('queue:retry_delay', 5));
-                    $q->push($class, $payload);
+                    $queue->push($class, $payload);
                     if ($isVerbose) {
                         $output->writeLine("🔁 Retrying $class...");
                     }
@@ -199,8 +200,6 @@ class QueueConsumeCommand extends AbstractCommand
 
             if ($isVerbose) {
                 $output->writeLine('---');
-            }
-            if ($isVerbose) {
                 $output->writeEmptyLine();
             }
 
@@ -226,10 +225,10 @@ class QueueConsumeCommand extends AbstractCommand
 
         $multi = $input->getOption('channels');
         if (is_string($multi) && trim($multi) !== '') {
-            foreach (explode(',', $multi) as $ch) {
-                $ch = trim($ch);
-                if ($ch !== '') {
-                    $channels[] = $ch;
+            foreach (explode(',', $multi) as $channel) {
+                $channel = trim($channel);
+                if ($channel !== '') {
+                    $channels[] = $channel;
                 }
             }
         }
@@ -249,10 +248,10 @@ class QueueConsumeCommand extends AbstractCommand
      */
     private function popFromChannels(array $channels): array
     {
-        foreach ($channels as $ch) {
-            $job = queue($ch)->pop();
+        foreach ($channels as $channel) {
+            $job = queue($channel)->pop();
             if ($job) {
-                return [$job, $ch];
+                return [$job, $channel];
             }
         }
 
