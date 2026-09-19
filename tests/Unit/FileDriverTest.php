@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
+use Exception;
 use InvalidArgumentException;
 use Naf\Queue\Drivers\FileDriver;
+use RuntimeException;
 use Tests\NafTestCase;
 
 final class FileDriverTest extends NafTestCase
@@ -20,7 +22,7 @@ final class FileDriverTest extends NafTestCase
 
         $this->driver = new FileDriver(
             $this->basePath . '/storage/queue',
-            $this->basePath . '/storage/queue/deadletter'
+            $this->basePath . '/storage/queue/deadletter',
         );
     }
 
@@ -31,10 +33,14 @@ final class FileDriverTest extends NafTestCase
 
     private function deleteDir(string $dir): void
     {
-        if (!is_dir($dir)) return;
+        if (!is_dir($dir)) {
+            return;
+        }
 
         foreach (scandir($dir) as $item) {
-            if ($item === '.' || $item === '..') continue;
+            if ($item === '.' || $item === '..') {
+                continue;
+            }
 
             $path = $dir . '/' . $item;
             if (is_dir($path)) {
@@ -66,7 +72,9 @@ final class FileDriverTest extends NafTestCase
         }
 
         foreach ($paths as $p) {
-            if (is_file($p)) return $p;
+            if (is_file($p)) {
+                return $p;
+            }
         }
 
         return null;
@@ -76,7 +84,7 @@ final class FileDriverTest extends NafTestCase
     {
         $this->assertTrue(
             method_exists($this->driver, $method),
-            "Expected FileDriver to have method {$method}()."
+            "Expected FileDriver to have method {$method}().",
         );
     }
 
@@ -171,8 +179,8 @@ final class FileDriverTest extends NafTestCase
 
     public function testDeadletterDefaultChannel(): void
     {
-        $payload = ['foo' => 'bar', '_job_id' => 'abc123'];
-        $exception = new \RuntimeException('Something went wrong');
+        $payload   = ['foo' => 'bar', '_job_id' => 'abc123'];
+        $exception = new RuntimeException('Something went wrong');
 
         $this->driver->deadletter('FailingJob', $payload, $exception);
 
@@ -193,7 +201,7 @@ final class FileDriverTest extends NafTestCase
         }
 
         $payload = ['foo' => 'bar', '_job_id' => 'dead-a'];
-        $this->driver->deadletterTo('a', 'FailingJob', $payload, new \RuntimeException('nope'));
+        $this->driver->deadletterTo('a', 'FailingJob', $payload, new RuntimeException('nope'));
 
         $file = $this->basePath . '/storage/queue/deadletter/a/dead-a.job';
         $this->assertFileExists($file);
@@ -207,8 +215,8 @@ final class FileDriverTest extends NafTestCase
 
     public function testRetryFailedDefaultChannel(): void
     {
-        $payload = ['foo' => 'bar', '_job_id' => 'retryme'];
-        $exception = new \RuntimeException('Nope');
+        $payload   = ['foo' => 'bar', '_job_id' => 'retryme'];
+        $exception = new RuntimeException('Nope');
 
         $this->driver->deadletter('RetryJob', $payload, $exception);
 
@@ -226,7 +234,7 @@ final class FileDriverTest extends NafTestCase
     public function testRetryKeepsFileDefaultChannel(): void
     {
         $payload = ['foo' => 'bar', '_job_id' => 'keepme'];
-        $this->driver->deadletter('KeepJob', $payload, new \Exception('fail'));
+        $this->driver->deadletter('KeepJob', $payload, new Exception('fail'));
 
         $count = $this->driver->retryFailed(true);
         $this->assertSame(1, $count);
@@ -242,7 +250,7 @@ final class FileDriverTest extends NafTestCase
         }
 
         $payload = ['foo' => 'bar', '_job_id' => 'retry-a'];
-        $this->driver->deadletterTo('a', 'RetryJob', $payload, new \RuntimeException('fail'));
+        $this->driver->deadletterTo('a', 'RetryJob', $payload, new RuntimeException('fail'));
 
         $count = $this->driver->retryFailedFrom('a');
         $this->assertSame(1, $count);
@@ -264,7 +272,7 @@ final class FileDriverTest extends NafTestCase
         }
 
         $payload = ['foo' => 'bar', '_job_id' => 'keep-a'];
-        $this->driver->deadletterTo('a', 'KeepJob', $payload, new \RuntimeException('fail'));
+        $this->driver->deadletterTo('a', 'KeepJob', $payload, new RuntimeException('fail'));
 
         $count = $this->driver->retryFailedFrom('a', true);
         $this->assertSame(1, $count);
@@ -278,7 +286,7 @@ final class FileDriverTest extends NafTestCase
         if (!method_exists($this->driver, 'enqueueTo') || !method_exists($this->driver, 'dequeueFrom')) {
             $this->markTestSkipped('Channel methods not available on this FileDriver version.');
         }
-        
+
         $this->expectException(InvalidArgumentException::class);
 
         // Try path traversal-like channel. We only assert: consistent mapping + job works.
@@ -296,7 +304,7 @@ final class FileDriverTest extends NafTestCase
             $this->markTestSkipped('Channel deadletter methods not available on this FileDriver version.');
         }
 
-        $this->driver->deadletterTo('gen', 'FailJob', ['foo' => 'bar'], new \RuntimeException('fail'));
+        $this->driver->deadletterTo('gen', 'FailJob', ['foo' => 'bar'], new RuntimeException('fail'));
 
         $dir = $this->basePath . '/storage/queue/deadletter/gen';
         $this->assertDirectoryExists($dir);

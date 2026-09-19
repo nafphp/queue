@@ -8,6 +8,7 @@ use Naf\CLI\Core\AbstractCommand;
 use Naf\CLI\Core\Input;
 use Naf\CLI\Core\Output;
 use Naf\Queue\Drivers\QueueDeadletterDriverInterface;
+
 use function Naf\Queue\queue;
 
 class QueueRetryFailedCommand extends AbstractCommand
@@ -27,15 +28,15 @@ class QueueRetryFailedCommand extends AbstractCommand
 
         if (! ($driver instanceof QueueDeadletterDriverInterface)) {
             $output->writeLine("❌ This driver does not support deadletter operations.");
+
             return static::ERROR;
         }
 
-        $keep = $input->getOption('keep') ?? false;
+        $keep  = $input->getOption('keep') ?? false;
         $count = $driver->retryFailed($keep);
 
         $output->writeLine("🔁 Retried $count failed job(s).");
 
         return static::SUCCESS;
     }
-
 }

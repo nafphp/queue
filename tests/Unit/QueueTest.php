@@ -14,7 +14,7 @@ class QueueTest extends NafTestCase
     protected function setUp(): void
     {
         $this->driver = $this->createMock(QueueDriverInterface::class);
-        $this->queue = new Queue($this->driver);
+        $this->queue  = new Queue($this->driver);
     }
 
     public function testPushCallsDriverEnqueue(): void

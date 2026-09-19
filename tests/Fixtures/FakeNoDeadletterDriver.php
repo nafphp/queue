@@ -19,6 +19,7 @@ final class FakeNoDeadletterDriver implements ChannelQueueDriverInterface
     public function dequeue(): ?array
     {
         $this->calls[] = ['dequeue', []];
+
         return null;
     }
 
@@ -30,6 +31,7 @@ final class FakeNoDeadletterDriver implements ChannelQueueDriverInterface
     public function dequeueFrom(string $channel): ?array
     {
         $this->calls[] = ['dequeueFrom', [$channel]];
+
         return null;
     }
 }

@@ -6,6 +6,7 @@ namespace Tests\Fixtures;
 
 use Naf\Queue\Decorators\Drivers\ChannelQueueDriverInterface;
 use Naf\Queue\Drivers\QueueDeadletterDriverInterface;
+use Throwable;
 
 final class FakeGlobalDeadletterDriver implements ChannelQueueDriverInterface, QueueDeadletterDriverInterface
 {
@@ -20,6 +21,7 @@ final class FakeGlobalDeadletterDriver implements ChannelQueueDriverInterface, Q
     public function dequeue(): ?array
     {
         $this->calls[] = ['dequeue', []];
+
         return null;
     }
 
@@ -31,10 +33,11 @@ final class FakeGlobalDeadletterDriver implements ChannelQueueDriverInterface, Q
     public function dequeueFrom(string $channel): ?array
     {
         $this->calls[] = ['dequeueFrom', [$channel]];
+
         return ['class' => 'JobX', 'payload' => ['x' => 1]];
     }
 
-    public function deadletter(string $class, array $payload, \Throwable $exception): void
+    public function deadletter(string $class, array $payload, Throwable $exception): void
     {
         $this->calls[] = ['deadletter', [$class, $payload, $exception->getMessage()]];
     }
@@ -42,6 +45,7 @@ final class FakeGlobalDeadletterDriver implements ChannelQueueDriverInterface, Q
     public function retryFailed(bool $keep = false): int
     {
         $this->calls[] = ['retryFailed', [$keep]];
+
         return 3;
     }
 }

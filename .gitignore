@@ -3,3 +3,4 @@ vendor/
 tests/Fixtures/storage
 .phpunit.result.cache
 .DS_Store
+/.php-cs-fixer.cache

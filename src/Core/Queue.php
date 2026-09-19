@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Naf\Queue\Core;
 
 use Naf\Queue\Drivers\QueueDriverInterface;
+
 use function Naf\app;
 
 class Queue
 {
-
     protected QueueDriverInterface $driver;
 
     /**
@@ -58,10 +58,9 @@ class Queue
         $this->push($class, $payload);
 
         $basePath = escapeshellarg(app()->getBasePath());
-        $command = 'cd ' . $basePath . ' && ./vendor/bin/naf queue:consume --once';
+        $command  = 'cd ' . $basePath . ' && ./vendor/bin/naf queue:consume --once';
 
         // Fire off a background PHP process to handle the next job
         exec($command . ' > /dev/null 2>&1 &');
     }
-
 }

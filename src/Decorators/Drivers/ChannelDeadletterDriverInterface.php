@@ -9,5 +9,6 @@ use Throwable;
 interface ChannelDeadletterDriverInterface
 {
     public function deadletterTo(string $channel, string $class, array $payload, Throwable $exception): void;
+
     public function retryFailedFrom(string $channel, bool $keep = false): int;
 }
