@@ -38,9 +38,7 @@ composer require naf/queue
 MIT. Part of [NAF](https://github.com/nafphp/framework).
 
 
-## Unreleased Nafinity integration candidate
-
-Target branch: `v0.2.3-rc`. This behavior is not a published release yet.
+## Behavior notes
 
 `queue:consume --once` returns a nonzero exit code when the selected job fails, including
 missing job classes, with both legacy drivers and the PDO lease driver. Retry/deadletter
