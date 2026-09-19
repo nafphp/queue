@@ -1,6 +1,7 @@
 .idea/
 vendor/
 tests/Fixtures/storage
+tests/Fixtures/logs
 .phpunit.result.cache
 .DS_Store
 /.php-cs-fixer.cache
