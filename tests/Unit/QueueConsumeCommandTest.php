@@ -9,8 +9,11 @@ use Naf\CLI\Core\Output;
 use Naf\Core\Config;
 use Naf\Queue\Commands\QueueConsumeCommand;
 use Naf\Queue\Core\Queue;
+use Naf\Queue\Core\QueueJobInterface;
+use Naf\Queue\Drivers\PDODriver;
 use Naf\Queue\Drivers\QueueDeadletterDriverInterface;
 use Naf\Queue\Drivers\QueueDriverInterface;
+use PDO;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -20,6 +23,37 @@ use function Naf\app;
 
 final class QueueConsumeCommandTest extends TestCase
 {
+    public function testWorkerSkipsDelayedJobsAndConsumesThemWhenDue(): void
+    {
+        $container = app()->container();
+        $hadQueue  = $container->has(Queue::class);
+        $previous  = $hadQueue ? $container->get(Queue::class) : null;
+        $pdo       = new PDO('sqlite::memory:');
+        $driver    = new PDODriver($pdo);
+        $driver->install();
+        $queue = new Queue($driver);
+        $container->set(Queue::class, $queue);
+        $queue->pushAfter(3600, DelayedWorkerProbe::class);
+        DelayedWorkerProbe::$runs = 0;
+
+        try {
+            $command = $container->make(QueueConsumeCommand::class);
+            $input   = new Input(['--once'], $command->getDefinition());
+            self::assertSame(0, $command->run($input, $this->createStub(Output::class)));
+            self::assertSame(0, DelayedWorkerProbe::$runs);
+            $pdo->exec('UPDATE naf_queue_jobs SET available_at=0');
+            self::assertSame(0, $command->run($input, $this->createStub(Output::class)));
+            self::assertSame(1, DelayedWorkerProbe::$runs);
+            self::assertNull($queue->pop());
+        } finally {
+            if ($hadQueue) {
+                $container->set(Queue::class, $previous);
+            } else {
+                $container->reset(Queue::class);
+            }
+        }
+    }
+
     public function testMissingClassReturnsFailureAndDeadlettersWithLegacyDrivers(): void
     {
         $container = app()->container();
@@ -47,5 +81,15 @@ final class QueueConsumeCommandTest extends TestCase
                 $container->reset(Queue::class);
             }
         }
+    }
+}
+
+final class DelayedWorkerProbe implements QueueJobInterface
+{
+    public static int $runs = 0;
+
+    public function execute(Output $output): void
+    {
+        ++self::$runs;
     }
 }

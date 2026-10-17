@@ -2,6 +2,8 @@
 
 namespace Tests\Unit;
 
+use InvalidArgumentException;
+use LogicException;
 use Naf\Queue\Core\Queue;
 use Naf\Queue\Drivers\QueueDriverInterface;
 use Tests\NafTestCase;
@@ -24,6 +26,20 @@ class QueueTest extends NafTestCase
             ->with('TestJob', ['foo' => 'bar']);
 
         $this->queue->push('TestJob', ['foo' => 'bar']);
+    }
+
+    public function testDelayedJobsRequireAnExplicitDriverCapability(): void
+    {
+        $this->driver->expects($this->never())->method('enqueue');
+        $this->expectException(LogicException::class);
+        $this->queue->pushAfter(30, 'TestJob');
+    }
+
+    public function testNegativeDelaysAreRejected(): void
+    {
+        $this->driver->expects($this->never())->method('enqueue');
+        $this->expectException(InvalidArgumentException::class);
+        $this->queue->pushAfter(-1, 'TestJob');
     }
 
     public function testPopCallsDriverDequeue(): void

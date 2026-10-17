@@ -10,7 +10,7 @@ use RuntimeException;
 use Throwable;
 
 /** One default channel. Enqueue uses the caller's PDO transaction; workers use a separate connection. */
-final class PDODriver implements LeaseQueueDriverInterface, QueueDeadletterDriverInterface
+final class PDODriver implements LeaseQueueDriverInterface, QueueDeadletterDriverInterface, DelayedQueueDriverInterface
 {
     public function __construct(private PDO $pdo, private int $leaseSeconds = 300)
     {
@@ -58,6 +58,14 @@ final class PDODriver implements LeaseQueueDriverInterface, QueueDeadletterDrive
 
     public function enqueue(string $class, array $payload): void
     {
+        $this->enqueueAt($class, $payload, time());
+    }
+
+    public function enqueueAt(string $class, array $payload, int $availableAt): void
+    {
+        if ($availableAt < 0) {
+            throw new InvalidArgumentException('Availability must be a non-negative Unix timestamp.');
+        }
         if ($class === '' || strlen($class) > 255) {
             throw new InvalidArgumentException('Invalid job class.');
         }
@@ -71,7 +79,7 @@ final class PDODriver implements LeaseQueueDriverInterface, QueueDeadletterDrive
                 : ' ON CONFLICT(dedup_key) DO NOTHING';
         $this->pdo
             ->prepare($sql)
-            ->execute([$class, json_encode($payload, JSON_THROW_ON_ERROR), $key, time(), time()]);
+            ->execute([$class, json_encode($payload, JSON_THROW_ON_ERROR), $key, $availableAt, time()]);
     }
 
     public function dequeue(): ?array
