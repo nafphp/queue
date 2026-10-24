@@ -53,7 +53,10 @@ queue()->push(ReportJob::class, ['reportId' => 'daily']);
 
 Run `vendor/bin/naf queue:consume` in the host. Prefer serializable identifiers/payloads and
 idempotent job work; do not serialize service objects or depend on a browser request/session.
-Use `queue($channel)` only with a driver supporting channels.
+Use `queue($channel)` only with a driver supporting channels. `queue()->pushAfter(30, Job::class, $payload)`
+requires `DelayedQueueDriverInterface` (the PDO driver supports it). Other drivers fail explicitly;
+never sleep in a worker to implement a delay. Delayed jobs keep normal transactional enqueue,
+coalescing, leases and retry behavior.
 
 ## Change it here
 

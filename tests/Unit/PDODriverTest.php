@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
+use Naf\Queue\Core\Queue;
 use Naf\Queue\Drivers\PDODriver;
 use PDO;
 use PHPUnit\Framework\TestCase;
@@ -40,6 +41,34 @@ final class PDODriverTest extends TestCase
             0,
             (int) $this->pdo->query('SELECT COUNT(*) FROM naf_queue_jobs')->fetchColumn(),
         );
+    }
+
+    public function testDelayedJobsStayDurableWithoutBlockingReadyWork(): void
+    {
+        $queue = new Queue($this->driver);
+        $queue->pushAfter(3600, 'DelayedJob', ['_job_id' => 'delayed']);
+        $queue->pushAfter(7200, 'DelayedJob', ['_job_id' => 'delayed']);
+        $queue->push('ReadyJob');
+        self::assertSame(2, (int) $this->pdo->query('SELECT COUNT(*) FROM naf_queue_jobs')->fetchColumn());
+        $ready = $this->driver->reserve();
+        self::assertSame('ReadyJob', $ready['class']);
+        $this->driver->acknowledge($ready);
+        self::assertNull($this->driver->reserve());
+        $this->pdo->exec('UPDATE naf_queue_jobs SET available_at=0');
+        $due = $this->driver->reserve();
+        self::assertSame('DelayedJob', $due['class']);
+        $this->driver->release($due, new RuntimeException('retry'), 3, 0);
+        $retry = $this->driver->reserve();
+        self::assertSame(2, $retry['attempts']);
+        $this->driver->acknowledge($retry);
+    }
+
+    public function testDelayedEnqueueUsesTheCallerTransaction(): void
+    {
+        $this->pdo->beginTransaction();
+        (new Queue($this->driver))->pushAfter(30, 'DelayedJob');
+        $this->pdo->rollBack();
+        self::assertSame(0, (int) $this->pdo->query('SELECT COUNT(*) FROM naf_queue_jobs')->fetchColumn());
     }
 
     public function testExpiredReservationIsRecoveredAndOldOwnerFenced(): void

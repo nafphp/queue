@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Naf\Queue\Core;
 
+use InvalidArgumentException;
+use LogicException;
+use Naf\Queue\Drivers\DelayedQueueDriverInterface;
 use Naf\Queue\Drivers\QueueDriverInterface;
 
 use function Naf\app;
@@ -29,6 +32,19 @@ class Queue
     public function push(string $class, array $payload = []): void
     {
         $this->driver->enqueue($class, $payload);
+    }
+
+    /** Persist immediately; workers may reserve it after the delay, without sleeping on it. */
+    public function pushAfter(int $delaySeconds, string $class, array $payload = []): void
+    {
+        $now = time();
+        if ($delaySeconds < 0 || $delaySeconds > PHP_INT_MAX - $now) {
+            throw new InvalidArgumentException('Queue delay must be non-negative and fit a Unix timestamp.');
+        }
+        if (!$this->driver instanceof DelayedQueueDriverInterface) {
+            throw new LogicException('The configured queue driver does not support delayed jobs.');
+        }
+        $this->driver->enqueueAt($class, $payload, $now + $delaySeconds);
     }
 
     /**
